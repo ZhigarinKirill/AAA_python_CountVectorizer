@@ -1,5 +1,10 @@
 import typing
 import re
+from math import log
+
+
+def transpose(matrix):
+    return list(map(list, zip(*matrix)))
 
 
 class Vectorizer:
@@ -25,15 +30,7 @@ class Vectorizer:
     def get_feature_names(self) -> typing.List[str]:
         return self._features
 
-    def fit_transform(self, corpus: typing.List[str],) -> typing.List[typing.List[str]]:
-        pass
-
-
-class CountVectorizer(Vectorizer):
-    def __init__(self) -> None:
-        super().__init__()
-
-    def transform(self, corpus: typing.List[str]) -> typing.List[typing.List[str]]:
+    def _to_count_matrix(self, corpus: typing.List[str]) -> typing.List[typing.List[str]]:
         if not self._features:
             return []
         freq_docs = list()
@@ -44,9 +41,47 @@ class CountVectorizer(Vectorizer):
                 if token in freq_words:
                     freq_words[token] += 1
             freq_docs.append(list(freq_words.values()))
-            # yield list(freq_words.values())
         return freq_docs
+
+    def transform(self, corpus: typing.List[str]) -> typing.List[typing.List[str]]:
+        pass
 
     def fit_transform(self, corpus: typing.List[str]) -> typing.List[typing.List[str]]:
         self.fit(corpus)
         return self.transform(corpus)
+
+
+class CountVectorizer(Vectorizer):
+    def transform(self, corpus: typing.List[str]) -> typing.List[typing.List[str]]:
+        return self._to_count_matrix(corpus)
+
+
+class TfidfTransformer:
+    def __init__(self):
+        pass
+
+    def _compute_tfs(self, count_matrix: typing.List[typing.List[int]]) -> typing.List[typing.List[float]]:
+        tf_matrix = [[freq/sum(vec) for freq in vec] for vec in count_matrix]
+        return tf_matrix
+
+    def _compute_idfs(self, count_matrix: typing.List[typing.List[int]]) -> typing.List[float]:
+        transposed_count_matrix = transpose(count_matrix)
+        idfs = [log((len(count_matrix) + 1)/(sum(1 for freq in word_freq if freq) +
+                                             1)) + 1 for word_freq in transposed_count_matrix]
+        return idfs
+
+    def fit_transform(self, count_matrix: typing.List[typing.List[int]]) -> typing.List[typing.List[float]]:
+        tfs = self._compute_tfs(count_matrix)
+        idfs = self._compute_idfs(count_matrix)
+        return [[tf*idf for tf, idf in zip(doc_tfs, idfs)] for doc_tfs in tfs]
+
+
+class TfidfVectorizer(CountVectorizer):
+    def __init__(self):
+        super().__init__()
+        self._tranformer = TfidfTransformer()
+
+    def fit_transform(self, corpus: typing.List[str]) -> typing.List[typing.List[float]]:
+        count_matrix = super().fit_transform(corpus)
+        return self._tranformer.fit_transform(count_matrix)
+
