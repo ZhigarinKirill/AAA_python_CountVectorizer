@@ -7,7 +7,7 @@ def transpose(matrix):
     return list(map(list, zip(*matrix)))
 
 
-class Vectorizer:
+class CountVectorizer:
     def __init__(self) -> None:
         self._features = list()
 
@@ -44,16 +44,11 @@ class Vectorizer:
         return freq_docs
 
     def transform(self, corpus: typing.List[str]) -> typing.List[typing.List[str]]:
-        pass
+        return self._to_count_matrix(corpus)
 
     def fit_transform(self, corpus: typing.List[str]) -> typing.List[typing.List[str]]:
         self.fit(corpus)
         return self.transform(corpus)
-
-
-class CountVectorizer(Vectorizer):
-    def transform(self, corpus: typing.List[str]) -> typing.List[typing.List[str]]:
-        return self._to_count_matrix(corpus)
 
 
 class TfidfTransformer:
@@ -84,4 +79,3 @@ class TfidfVectorizer(CountVectorizer):
     def fit_transform(self, corpus: typing.List[str]) -> typing.List[typing.List[float]]:
         count_matrix = super().fit_transform(corpus)
         return self._tranformer.fit_transform(count_matrix)
-
